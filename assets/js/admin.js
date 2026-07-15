@@ -431,10 +431,11 @@
 
 	function updateDeleteBtn() {
 		const checked = document.querySelectorAll('.mus-cb:checked');
+		const label = cfg.backups_enabled
+			? (S.delete_btn_backup || 'Export ZIP + Delete Selected')
+			: (S.delete_btn_no_backup || 'Delete Selected');
 		deleteBtn.disabled = checked.length === 0;
-		deleteBtn.textContent = checked.length
-			? 'Export ZIP + Delete Selected (' + checked.length + ')'
-			: 'Export ZIP + Delete Selected';
+		deleteBtn.textContent = checked.length ? label + ' (' + checked.length + ')' : label;
 	}
 
 	/* ── Scan flow ───────────────────────────────────────────────────── */
@@ -661,7 +662,11 @@
 	/* ── Delete flow (ZIP + delete) ──────────────────────────────────── */
 
 	async function runDelete() {
-		if (!confirm(S.confirm_delete || 'Proceed?')) return;
+		const backupsOn = !!cfg.backups_enabled;
+		const confirmMsg = backupsOn
+			? (S.confirm_delete || 'Proceed?')
+			: (S.confirm_delete_no_backup || 'Permanently delete selected items? This cannot be undone.');
+		if (!confirm(confirmMsg)) return;
 
 		const checked = document.querySelectorAll('.mus-cb:checked');
 		const ids = Array.from(checked).map((cb) => cb.value);
@@ -669,16 +674,21 @@
 
 		try {
 			busy(true);
-			setProgress(50, S.preparing_zip || 'Preparing ZIP backup…');
 
-			const zipData = await post('mus_export_zip', { ids });
-			triggerDownload(zipData.download_url, zipData.filename || '');
+			let backupFilename = '';
+
+			if (backupsOn) {
+				setProgress(50, S.preparing_zip || 'Preparing ZIP backup…');
+				const zipData = await post('mus_export_zip', { ids });
+				triggerDownload(zipData.download_url, zipData.filename || '');
+				backupFilename = zipData.filename || '';
+			}
 
 			setProgress(75, S.deleting || 'Deleting…');
 
 			const delData = await post('mus_delete_media', {
 				ids,
-				backup_file: zipData.filename || '',
+				backup_file: backupFilename,
 			});
 
 			const skipped = Array.isArray(delData.skipped) ? delData.skipped.map(String) : [];
@@ -686,7 +696,9 @@
 				return skipped.includes(String(item.id)) || !ids.includes(String(item.id));
 			});
 
-			let msg = 'ZIP backup downloaded. Deleted ' + delData.deleted + ' items.';
+			let msg = backupsOn
+				? 'ZIP backup downloaded. Deleted ' + delData.deleted + ' items.'
+				: 'Deleted ' + delData.deleted + ' items permanently (no backup created).';
 			if (skipped.length) {
 				msg += ' ' + skipped.length + ' skipped (usage detected or deletion failed).';
 			}
@@ -694,6 +706,7 @@
 
 			updateSummary();
 			render();
+			if (backupsOn) loadBackups();
 			setProgress(100, '');
 		} catch (err) {
 			console.error(err);
@@ -725,14 +738,31 @@
 
 	/* ── Backups panel ───────────────────────────────────────────────── */
 
+	function updateBackupsNotice(hasBackups) {
+		const notice = $('mus-backups-disabled-notice');
+		if (!notice) return;
+
+		if (cfg.backups_enabled) {
+			notice.style.display = 'none';
+			return;
+		}
+
+		notice.querySelector('p').textContent = hasBackups
+			? (S.backups_disabled_notice || 'ZIP backups are currently disabled.')
+			: (S.backups_disabled_empty || 'ZIP backups are currently disabled.');
+		notice.style.display = 'block';
+	}
+
 	async function loadBackups() {
 		try {
 			const data    = await post('mus_get_backups');
 			const list    = $('mus-backups-list');
 			const backups = data.backups || [];
 
+			updateBackupsNotice(!!backups.length);
+
 			if (!backups.length) {
-				list.innerHTML = '<em>No backups yet.</em>';
+				list.innerHTML = cfg.backups_enabled ? '<em>No backups yet.</em>' : '';
 				return;
 			}
 
@@ -1002,12 +1032,14 @@
 		const s = cfg.settings || {};
 		const cronEl      = $('mus-set-cron');
 		const emailEl     = $('mus-set-email');
+		const backupsEl   = $('mus-set-backups-enabled');
 		const retentionEl = $('mus-set-retention');
 		const themeEl     = $('mus-set-theme');
 		const delayEl     = $('mus-set-batch-delay');
 
 		if (cronEl) cronEl.checked           = !!s.enable_cron;
 		if (emailEl) emailEl.value           = s.cron_email || '';
+		if (backupsEl) backupsEl.checked      = !!s.backups_enabled;
 		if (retentionEl) retentionEl.value    = s.retention_days || 30;
 		if (themeEl) themeEl.checked          = !!s.scan_theme;
 		if (delayEl) delayEl.value             = (typeof s.batch_delay_ms !== 'undefined') ? s.batch_delay_ms : 250;
@@ -1017,17 +1049,20 @@
 				const data = await post('mus_save_settings', {
 					enable_cron:      cronEl && cronEl.checked ? '1' : '0',
 					cron_email:       emailEl ? emailEl.value : '',
+					backups_enabled:  backupsEl && backupsEl.checked ? '1' : '0',
 					retention_days:   retentionEl ? retentionEl.value : '30',
 					scan_theme_files: themeEl && themeEl.checked ? '1' : '0',
 					batch_delay_ms:   delayEl ? delayEl.value : '250',
 				});
 
 				if (delayEl) cfg.batch_delay_ms = parseInt(delayEl.value, 10) || 0;
+				cfg.backups_enabled = !!data.backups_enabled;
+				updateDeleteBtn();
 
 				$('mus-settings-msg').textContent = data.message || S.settings_saved || 'Saved.';
 				setTimeout(() => { $('mus-settings-msg').textContent = ''; }, 4000);
 
-				if (data.backups_purged > 0) loadBackups();
+				loadBackups();
 			} catch (err) {
 				$('mus-settings-msg').textContent = (S.error || 'Error') + ' ' + (err.message || '');
 			}

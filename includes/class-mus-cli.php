@@ -199,16 +199,21 @@ class MUS_CLI {
 			WP_CLI::confirm( sprintf( 'Delete %d unused files?', count( $unused ) ) );
 		}
 
-		$ids    = array_column( $unused, 'id' );
-		$result = MUS_Exporter::create_zip( $ids );
+		$ids         = array_column( $unused, 'id' );
+		$backup_file = '';
 
-		if ( is_wp_error( $result ) ) {
-			WP_CLI::warning( 'Could not create ZIP backup: ' . $result->get_error_message() );
+		if ( get_option( 'mus_backups_enabled', true ) ) {
+			$result = MUS_Exporter::create_zip( $ids );
+
+			if ( is_wp_error( $result ) ) {
+				WP_CLI::warning( 'Could not create ZIP backup: ' . $result->get_error_message() );
+			} else {
+				WP_CLI::log( sprintf( 'Backup ZIP created: %s (%d files)', $result['filename'], $result['added_count'] ) );
+				$backup_file = $result['filename'];
+			}
 		} else {
-			WP_CLI::log( sprintf( 'Backup ZIP created: %s (%d files)', $result['filename'], $result['added_count'] ) );
+			WP_CLI::log( 'ZIP backups are disabled in Settings — deleting without a backup.' );
 		}
-
-		$backup_file = is_wp_error( $result ) ? '' : $result['filename'];
 		$deleted     = 0;
 		$site_logo   = (int) get_theme_mod( 'custom_logo' );
 		$site_icon   = (int) get_option( 'site_icon' );

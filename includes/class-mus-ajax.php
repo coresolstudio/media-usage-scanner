@@ -402,14 +402,16 @@ class MUS_Ajax {
 		try {
 			$this->verify();
 
-			$enable_cron    = isset( $_POST['enable_cron'] ) && '1' === $_POST['enable_cron'];
-			$cron_email     = isset( $_POST['cron_email'] ) ? sanitize_email( wp_unslash( $_POST['cron_email'] ) ) : '';
-			$retention_days = isset( $_POST['retention_days'] ) ? absint( $_POST['retention_days'] ) : 30;
-			$scan_theme     = isset( $_POST['scan_theme_files'] ) && '1' === $_POST['scan_theme_files'];
-			$batch_delay_ms = isset( $_POST['batch_delay_ms'] ) ? absint( $_POST['batch_delay_ms'] ) : 250;
+			$enable_cron     = isset( $_POST['enable_cron'] ) && '1' === $_POST['enable_cron'];
+			$cron_email      = isset( $_POST['cron_email'] ) ? sanitize_email( wp_unslash( $_POST['cron_email'] ) ) : '';
+			$backups_enabled = isset( $_POST['backups_enabled'] ) && '1' === $_POST['backups_enabled'];
+			$retention_days  = isset( $_POST['retention_days'] ) ? absint( $_POST['retention_days'] ) : 30;
+			$scan_theme      = isset( $_POST['scan_theme_files'] ) && '1' === $_POST['scan_theme_files'];
+			$batch_delay_ms  = isset( $_POST['batch_delay_ms'] ) ? absint( $_POST['batch_delay_ms'] ) : 250;
 
 			update_option( 'mus_enable_cron', $enable_cron );
 			update_option( 'mus_cron_email', $cron_email );
+			update_option( 'mus_backups_enabled', $backups_enabled );
 			update_option( 'mus_backup_retention_days', max( 1, $retention_days ) );
 			update_option( 'mus_scan_theme_files', $scan_theme );
 			update_option( 'mus_batch_delay_ms', min( 5000, $batch_delay_ms ) );
@@ -424,8 +426,9 @@ class MUS_Ajax {
 
 			wp_send_json_success(
 				array(
-					'message'       => __( 'Settings saved.', 'media-usage-scanner' ),
-					'backups_purged' => $purged,
+					'message'         => __( 'Settings saved.', 'media-usage-scanner' ),
+					'backups_purged'  => $purged,
+					'backups_enabled' => $backups_enabled,
 				)
 			);
 		} catch ( \Throwable $e ) {

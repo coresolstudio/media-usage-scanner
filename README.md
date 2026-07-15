@@ -20,7 +20,7 @@ Media Usage Scanner builds a reverse index of every place a file could be refere
 | 🧩 | **13 Detection Sources** | Post content, Elementor (data + fonts), WooCommerce galleries, widgets, nav menus, theme mods, site identity, postmeta URLs, ACF ID/array fields, options table, and optional theme file scanning |
 | 🎯 | **ACF ID-Field Aware** | Catches ACF Image/Gallery fields using the "ID" return format — bare integers and serialized ID arrays that URL-based scanners miss entirely |
 | 🗑️ | **Duplicate Finder** | Hashes files to surface exact duplicates and how much disk space they're wasting |
-| 💾 | **Automatic ZIP Backups** | Every deletion is backed up to a ZIP archive first — nothing is ever permanently lost by accident |
+| 💾 | **Automatic ZIP Backups** | Every deletion is backed up to a ZIP archive first — nothing is ever permanently lost by accident. Optional: can be turned off in Settings to delete files directly with no backup |
 | ↩️ | **Selective Restore** | Pick exactly which files to bring back from a backup ZIP — restoring each with its **original attachment ID** whenever that ID is still free — so ACF fields, `_thumbnail_id`, Elementor widgets, and `custom_logo` references start working again automatically |
 | 🕓 | **Restore History Tracking** | Every restore is logged with date, time, and user; restoring the same file again warns you upfront if it's been restored before |
 | ⚡ | **Cached Scan Results** | Scan results persist between visits — no need to re-scan every time you open the page. A "Refresh Scan" button gets you up-to-date data on demand |
@@ -163,6 +163,9 @@ Both tables — along with all plugin options, scheduled events, and the `media-
 ---
 
 ## 📜 Changelog
+
+### 2.8.0
+- New Settings toggle: **"ZIP backups on delete"**. Turn it off to skip the ZIP export step entirely and delete files directly — the delete button switches to a plain "Delete Selected" with no backup created. Existing backups made before disabling remain listed and restorable
 
 ### 2.7.1
 - "Already restored" warnings now only appear if that restored copy is still in the Media Library — if it was deleted again since, the file is treated as never restored

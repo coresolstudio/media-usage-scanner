@@ -696,6 +696,21 @@
 	background: #fcf5e2;
 }
 
+.mus-notice-warn {
+	margin: 0 0 14px;
+	padding: 10px 14px;
+	background: #fcf5e2;
+	border: 1px solid #e0c266;
+	border-left: 3px solid #dba617;
+	border-radius: 3px;
+	color: #6b4c00;
+	font-size: 13px;
+}
+
+.mus-notice-warn p {
+	margin: 0;
+}
+
 .mus-restore-history {
 	list-style: none;
 	margin: 4px 0 2px 16px;

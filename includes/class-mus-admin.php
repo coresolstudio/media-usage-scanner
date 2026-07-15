@@ -60,34 +60,41 @@ class MUS_Admin {
 				'batch_size'      => 50,
 				'batch_delay_ms'  => (int) get_option( 'mus_batch_delay_ms', 250 ),
 				'has_cached_scan' => (bool) $cached_index,
+				'backups_enabled' => (bool) get_option( 'mus_backups_enabled', true ),
 				'strings'         => array(
-					'confirm_delete'   => __( 'Create a ZIP backup and permanently delete selected items? This cannot be undone.', 'media-usage-scanner' ),
-					'building_index'   => __( 'Building usage index…', 'media-usage-scanner' ),
-					'scanning'         => __( 'Scanning…', 'media-usage-scanner' ),
-					'scan_complete'    => __( 'Scan complete.', 'media-usage-scanner' ),
-					'scan_failed'      => __( 'Scan failed.', 'media-usage-scanner' ),
-					'loading_cached'   => __( 'Loading last scan results…', 'media-usage-scanner' ),
-					'finding_dupes'    => __( 'Finding duplicates…', 'media-usage-scanner' ),
-					'dupes_complete'   => __( 'Duplicate scan complete.', 'media-usage-scanner' ),
-					'preparing_zip'    => __( 'Preparing ZIP backup…', 'media-usage-scanner' ),
-					'deleting'         => __( 'Deleting…', 'media-usage-scanner' ),
-					'no_items'         => __( 'No items found.', 'media-usage-scanner' ),
-					'settings_saved'   => __( 'Settings saved.', 'media-usage-scanner' ),
-					'error'            => __( 'An error occurred.', 'media-usage-scanner' ),
-					'scan_btn_first'   => __( 'Scan Media Library', 'media-usage-scanner' ),
-					'scan_btn_refresh' => __( 'Refresh Scan', 'media-usage-scanner' ),
-					'last_scanned'     => __( 'Last scanned: %s', 'media-usage-scanner' ),
-					'last_scanned_now' => __( 'Last scanned: just now', 'media-usage-scanner' ),
-					'retrying'         => __( 'Server hiccup — retrying (%1$d/%2$d)…', 'media-usage-scanner' ),
-					'scan_paused'      => __( 'Scan paused after a server error. This usually means a temporary hosting limit was hit. What was found so far is shown below — wait a moment and click "Refresh Scan" to continue, or increase the delay between requests in Settings.', 'media-usage-scanner' ),
-					'bad_response'     => __( 'The server returned an unexpected response (HTTP %d) instead of data. This usually means a temporary hosting limit (CPU/resource cap) was hit.', 'media-usage-scanner' ),
+					'confirm_delete'           => __( 'Create a ZIP backup and permanently delete selected items? This cannot be undone.', 'media-usage-scanner' ),
+					'confirm_delete_no_backup' => __( 'Permanently delete selected items? ZIP backups are disabled, so this cannot be undone and there will be nothing to restore.', 'media-usage-scanner' ),
+					'delete_btn_backup'        => __( 'Export ZIP + Delete Selected', 'media-usage-scanner' ),
+					'delete_btn_no_backup'     => __( 'Delete Selected', 'media-usage-scanner' ),
+					'building_index'           => __( 'Building usage index…', 'media-usage-scanner' ),
+					'scanning'                 => __( 'Scanning…', 'media-usage-scanner' ),
+					'scan_complete'            => __( 'Scan complete.', 'media-usage-scanner' ),
+					'scan_failed'              => __( 'Scan failed.', 'media-usage-scanner' ),
+					'loading_cached'           => __( 'Loading last scan results…', 'media-usage-scanner' ),
+					'finding_dupes'            => __( 'Finding duplicates…', 'media-usage-scanner' ),
+					'dupes_complete'           => __( 'Duplicate scan complete.', 'media-usage-scanner' ),
+					'preparing_zip'            => __( 'Preparing ZIP backup…', 'media-usage-scanner' ),
+					'deleting'                 => __( 'Deleting…', 'media-usage-scanner' ),
+					'no_items'                 => __( 'No items found.', 'media-usage-scanner' ),
+					'settings_saved'           => __( 'Settings saved.', 'media-usage-scanner' ),
+					'error'                    => __( 'An error occurred.', 'media-usage-scanner' ),
+					'scan_btn_first'           => __( 'Scan Media Library', 'media-usage-scanner' ),
+					'scan_btn_refresh'         => __( 'Refresh Scan', 'media-usage-scanner' ),
+					'last_scanned'             => __( 'Last scanned: %s', 'media-usage-scanner' ),
+					'last_scanned_now'         => __( 'Last scanned: just now', 'media-usage-scanner' ),
+					'retrying'                 => __( 'Server hiccup — retrying (%1$d/%2$d)…', 'media-usage-scanner' ),
+					'scan_paused'              => __( 'Scan paused after a server error. This usually means a temporary hosting limit was hit. What was found so far is shown below — wait a moment and click "Refresh Scan" to continue, or increase the delay between requests in Settings.', 'media-usage-scanner' ),
+					'bad_response'             => __( 'The server returned an unexpected response (HTTP %d) instead of data. This usually means a temporary hosting limit (CPU/resource cap) was hit.', 'media-usage-scanner' ),
+					'backups_disabled_notice'  => __( 'ZIP backups are currently disabled — files you delete from the Run a Scan tab are removed permanently and cannot be restored. Any backups created before you disabled this are still listed below.', 'media-usage-scanner' ),
+					'backups_disabled_empty'   => __( 'ZIP backups are currently disabled, so there are none to show. Deleted files are removed permanently. Enable backups in Settings to protect against accidental deletions.', 'media-usage-scanner' ),
 				),
 				'settings'        => array(
-					'enable_cron'    => get_option( 'mus_enable_cron', false ) ? '1' : '',
-					'cron_email'     => get_option( 'mus_cron_email', get_option( 'admin_email' ) ),
-					'retention_days' => get_option( 'mus_backup_retention_days', 30 ),
-					'scan_theme'     => get_option( 'mus_scan_theme_files', false ) ? '1' : '',
-					'batch_delay_ms' => get_option( 'mus_batch_delay_ms', 250 ),
+					'enable_cron'      => get_option( 'mus_enable_cron', false ) ? '1' : '',
+					'cron_email'       => get_option( 'mus_cron_email', get_option( 'admin_email' ) ),
+					'backups_enabled'  => get_option( 'mus_backups_enabled', true ) ? '1' : '',
+					'retention_days'   => get_option( 'mus_backup_retention_days', 30 ),
+					'scan_theme'       => get_option( 'mus_scan_theme_files', false ) ? '1' : '',
+					'batch_delay_ms'   => get_option( 'mus_batch_delay_ms', 250 ),
 				),
 			)
 		);
@@ -253,7 +260,7 @@ class MUS_Admin {
 				<!-- Toolbar -->
 				<div class="tablenav top">
 					<div class="alignleft actions">
-						<button id="mus-delete-btn" class="button button-link-delete" disabled style="display:none;"><?php esc_html_e( 'Export ZIP + Delete Selected', 'media-usage-scanner' ); ?></button>
+						<button id="mus-delete-btn" class="button button-link-delete" disabled style="display:none;"><?php echo get_option( 'mus_backups_enabled', true ) ? esc_html__( 'Export ZIP + Delete Selected', 'media-usage-scanner' ) : esc_html__( 'Delete Selected', 'media-usage-scanner' ); ?></button>
 						<button id="mus-csv-btn" class="button" style="display:none;"><?php esc_html_e( 'Export CSV', 'media-usage-scanner' ); ?></button>
 					</div>
 					<div class="mus-pagination" id="mus-pagination"></div>
@@ -291,9 +298,10 @@ class MUS_Admin {
 			<div class="mus-card" id="mus-backups-section">
 				<div class="mus-card-header">
 					<h2><?php esc_html_e( 'Backup Archives', 'media-usage-scanner' ); ?></h2>
-					<p class="mus-card-desc"><?php esc_html_e( 'Before any file is deleted, a ZIP backup is created here automatically. Click Restore to add its files back into the Media Library — where possible, each file gets its original ID back so anything that referenced it (ACF fields, featured images, Elementor widgets) picks it up automatically. Backups are purged based on the retention setting below.', 'media-usage-scanner' ); ?></p>
+					<p class="mus-card-desc"><?php esc_html_e( 'Before any file is deleted, a ZIP backup is created here automatically (unless disabled in Settings). Click Restore to add its files back into the Media Library — where possible, each file gets its original ID back so anything that referenced it (ACF fields, featured images, Elementor widgets) picks it up automatically. Backups are purged based on the retention setting below.', 'media-usage-scanner' ); ?></p>
 				</div>
 				<div class="mus-card-body">
+					<div id="mus-backups-disabled-notice" class="mus-notice-warn" style="display:none;"><p></p></div>
 					<div id="mus-backups-list"><em><?php esc_html_e( 'Loading…', 'media-usage-scanner' ); ?></em></div>
 					<div id="mus-restore-result" class="mus-restore-result" style="display:none;"></div>
 				</div>
@@ -324,10 +332,17 @@ class MUS_Admin {
 							</div>
 						</div>
 						<div class="mus-setting-row">
+							<label class="mus-setting-label" for="mus-set-backups-enabled"><?php esc_html_e( 'ZIP backups on delete', 'media-usage-scanner' ); ?></label>
+							<div class="mus-setting-field">
+								<label><input type="checkbox" id="mus-set-backups-enabled"> <?php esc_html_e( 'Create a ZIP backup before permanently deleting files', 'media-usage-scanner' ); ?></label>
+								<p class="description"><?php esc_html_e( 'Recommended — lets you restore files if you delete something by mistake. Turn this off to skip the ZIP export entirely and just delete files directly.', 'media-usage-scanner' ); ?></p>
+							</div>
+						</div>
+						<div class="mus-setting-row">
 							<label class="mus-setting-label" for="mus-set-retention"><?php esc_html_e( 'Backup retention', 'media-usage-scanner' ); ?></label>
 							<div class="mus-setting-field">
 								<input type="number" id="mus-set-retention" class="small-text" min="1"> <?php esc_html_e( 'days', 'media-usage-scanner' ); ?>
-								<p class="description"><?php esc_html_e( 'ZIP backups older than this are deleted automatically to save disk space.', 'media-usage-scanner' ); ?></p>
+								<p class="description"><?php esc_html_e( 'ZIP backups older than this are deleted automatically to save disk space. Only applies while ZIP backups are enabled above.', 'media-usage-scanner' ); ?></p>
 							</div>
 						</div>
 						<div class="mus-setting-row">

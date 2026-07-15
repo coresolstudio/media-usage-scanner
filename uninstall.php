@@ -22,6 +22,7 @@ delete_option( 'mus_db_version' );
 delete_option( 'mus_disabled_image_sizes' );
 delete_option( 'mus_disable_srcset' );
 delete_option( 'mus_batch_delay_ms' );
+delete_option( 'mus_backups_enabled' );
 
 wp_clear_scheduled_hook( 'mus_scheduled_scan' );
 
