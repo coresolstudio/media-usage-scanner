@@ -74,9 +74,10 @@ class MUS_Ajax {
 		try {
 			$this->verify();
 
-			$offset  = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
-			$limit   = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 50;
-			$filters = array(
+			$offset      = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
+			$limit       = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 50;
+			$known_total = isset( $_POST['total'] ) ? absint( $_POST['total'] ) : 0;
+			$filters     = array(
 				'date_from'   => isset( $_POST['date_from'] ) ? sanitize_text_field( wp_unslash( $_POST['date_from'] ) ) : '',
 				'date_to'     => isset( $_POST['date_to'] ) ? sanitize_text_field( wp_unslash( $_POST['date_to'] ) ) : '',
 				'search_term' => isset( $_POST['search_term'] ) ? sanitize_text_field( wp_unslash( $_POST['search_term'] ) ) : '',
@@ -84,7 +85,7 @@ class MUS_Ajax {
 			);
 
 			$scanner = new MUS_Scanner();
-			$result  = $scanner->get_results_batch( $offset, $limit, $filters );
+			$result  = $scanner->get_results_batch( $offset, $limit, $filters, $known_total );
 
 			wp_send_json_success( $result );
 		} catch ( \Throwable $e ) {
@@ -283,7 +284,9 @@ class MUS_Ajax {
 				wp_send_json_error( array( 'message' => __( 'No filename provided.', 'media-usage-scanner' ) ), 400 );
 			}
 
-			$result = MUS_Exporter::restore_zip( $filename );
+			$selected_files = isset( $_POST['files'] ) ? array_map( 'sanitize_file_name', (array) wp_unslash( $_POST['files'] ) ) : array();
+
+			$result = MUS_Exporter::restore_zip( $filename, $selected_files );
 
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
@@ -403,11 +406,13 @@ class MUS_Ajax {
 			$cron_email     = isset( $_POST['cron_email'] ) ? sanitize_email( wp_unslash( $_POST['cron_email'] ) ) : '';
 			$retention_days = isset( $_POST['retention_days'] ) ? absint( $_POST['retention_days'] ) : 30;
 			$scan_theme     = isset( $_POST['scan_theme_files'] ) && '1' === $_POST['scan_theme_files'];
+			$batch_delay_ms = isset( $_POST['batch_delay_ms'] ) ? absint( $_POST['batch_delay_ms'] ) : 250;
 
 			update_option( 'mus_enable_cron', $enable_cron );
 			update_option( 'mus_cron_email', $cron_email );
 			update_option( 'mus_backup_retention_days', max( 1, $retention_days ) );
 			update_option( 'mus_scan_theme_files', $scan_theme );
+			update_option( 'mus_batch_delay_ms', min( 5000, $batch_delay_ms ) );
 
 			if ( $enable_cron ) {
 				MUS_Cron::activate();

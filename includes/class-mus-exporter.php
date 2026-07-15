@@ -230,8 +230,13 @@ class MUS_Exporter {
 				$dates[] = date_i18n( $date_format, strtotime( $row->restored_at ) );
 			}
 
+			$stat = $zip->statIndex( $i );
+			$size = ( $stat && isset( $stat['size'] ) ) ? (int) $stat['size'] : 0;
+
 			$files[] = array(
 				'filename'          => $entry,
+				'size'              => $size,
+				'size_fmt'          => $size ? size_format( $size ) : '',
 				'restored_before'   => ! empty( $dates ),
 				'restore_count'     => count( $dates ),
 				'previous_restores' => $dates,
@@ -264,13 +269,20 @@ class MUS_Exporter {
 	 *   automatically. If that ID is no longer free, it falls back to a
 	 *   normal auto-generated ID.
 	 *
-	 * @param string $filename Backup ZIP filename (basename only).
-	 * @return array{ restored: array[], errors: string[], count: int }|WP_Error
+	 * @param string   $filename       Backup ZIP filename (basename only).
+	 * @param string[] $selected_files Optional. If non-empty, only these filenames
+	 *                                 (as they appear inside the ZIP) are restored —
+	 *                                 everything else in the archive is left alone.
+	 *                                 Empty/omitted restores every file, as before.
+	 * @return array{ restored: array[], errors: string[], count: int, skipped_count: int }|WP_Error
 	 */
-	public static function restore_zip( $filename ) {
+	public static function restore_zip( $filename, $selected_files = array() ) {
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			return new WP_Error( 'no_zip', __( 'ZipArchive is not available on this server.', 'media-usage-scanner' ) );
 		}
+
+		$selected_files = array_filter( array_map( 'sanitize_file_name', (array) $selected_files ) );
+		$selected_lookup = $selected_files ? array_flip( $selected_files ) : null;
 
 		$filename = sanitize_file_name( $filename );
 		$dir      = self::get_backup_dir();
@@ -298,9 +310,10 @@ class MUS_Exporter {
 		@set_time_limit( 300 ); // phpcs:ignore
 		wp_raise_memory_limit( 'image' );
 
-		$log_map  = MUS_Logger::get_entries_by_backup( $filename );
-		$restored = array();
-		$errors   = array();
+		$log_map       = MUS_Logger::get_entries_by_backup( $filename );
+		$restored      = array();
+		$errors        = array();
+		$skipped_count = 0;
 
 		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 			$entry = $zip->getNameIndex( $i );
@@ -308,6 +321,13 @@ class MUS_Exporter {
 			// Flat filenames only — this plugin never writes directory entries,
 			// so anything else is unexpected and skipped for safety.
 			if ( ! $entry || false !== strpos( $entry, '/' ) || false !== strpos( $entry, '\\' ) || false !== strpos( $entry, '..' ) ) {
+				continue;
+			}
+
+			// A specific selection was requested — leave everything else in the
+			// backup untouched (partial restore).
+			if ( null !== $selected_lookup && ! isset( $selected_lookup[ $entry ] ) ) {
+				++$skipped_count;
 				continue;
 			}
 
@@ -413,9 +433,10 @@ class MUS_Exporter {
 		$zip->close();
 
 		return array(
-			'restored' => $restored,
-			'errors'   => $errors,
-			'count'    => count( $restored ),
+			'restored'      => $restored,
+			'errors'        => $errors,
+			'count'         => count( $restored ),
+			'skipped_count' => $skipped_count,
 		);
 	}
 

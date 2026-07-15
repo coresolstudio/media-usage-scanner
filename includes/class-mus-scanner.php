@@ -125,12 +125,17 @@ class MUS_Scanner {
 	 * Return a filtered + paginated batch of attachment results
 	 * using the pre-built index.
 	 *
-	 * @param int   $offset  SQL offset.
-	 * @param int   $limit   SQL limit.
-	 * @param array $filters { date_from, date_to, search_term, search_mode }.
+	 * @param int   $offset       SQL offset.
+	 * @param int   $limit        SQL limit.
+	 * @param array $filters      { date_from, date_to, search_term, search_mode }.
+	 * @param int   $known_total  If the caller already knows the total (e.g. from a
+	 *                            previous batch in the same scan), pass it here to skip
+	 *                            re-running the COUNT query on every single batch —
+	 *                            meaningful savings on large libraries where a scan can
+	 *                            mean dozens of sequential requests.
 	 * @return array{ items: array, total: int, next_offset: int, complete: bool }
 	 */
-	public function get_results_batch( $offset, $limit, $filters = array() ) {
+	public function get_results_batch( $offset, $limit, $filters = array(), $known_total = 0 ) {
 		global $wpdb;
 
 		$index = $this->load_index();
@@ -148,11 +153,15 @@ class MUS_Scanner {
 		$where = $this->build_attachment_where( $filters );
 		$args  = $where['args'];
 
-		$total_sql = "SELECT COUNT(ID) FROM {$wpdb->posts}" . $where['sql'];
-		if ( ! empty( $args ) ) {
-			$total_sql = $wpdb->prepare( $total_sql, $args );
+		if ( $known_total > 0 ) {
+			$total = (int) $known_total;
+		} else {
+			$total_sql = "SELECT COUNT(ID) FROM {$wpdb->posts}" . $where['sql'];
+			if ( ! empty( $args ) ) {
+				$total_sql = $wpdb->prepare( $total_sql, $args );
+			}
+			$total = (int) $wpdb->get_var( $total_sql );
 		}
-		$total = (int) $wpdb->get_var( $total_sql );
 
 		$batch_args   = $args;
 		$batch_args[] = max( 1, min( 200, (int) $limit ) );

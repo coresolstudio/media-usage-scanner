@@ -116,11 +116,49 @@
 			credentials: 'same-origin',
 		});
 
-		const json = await res.json();
+		const raw = await res.text();
+		let json;
+		try {
+			json = JSON.parse(raw);
+		} catch (e) {
+			// The host (not WordPress) returned something else entirely — usually an
+			// HTML error page from a resource limiter/timeout (502/503/504).
+			const tpl = S.bad_response || 'The server returned an unexpected response (HTTP %d) instead of data. This usually means a temporary hosting limit was hit.';
+			throw new Error(tpl.replace('%d', res.status));
+		}
+
 		if (!res.ok || !json.success) {
 			throw new Error((json.data && json.data.message) || S.error || 'Error');
 		}
 		return json.data;
+	}
+
+	function sleep(ms) {
+		return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms || 0)));
+	}
+
+	/**
+	 * Same as post(), but retries on failure with exponential backoff. Batch
+	 * loops call this repeatedly, sometimes dozens/hundreds of times for a
+	 * large library — on hosts with strict CPU/resource limits, a transient
+	 * 502/503/504 partway through shouldn't blow away the whole operation.
+	 */
+	async function postWithRetry(action, data, opts) {
+		const maxRetries = (opts && opts.retries) || 3;
+		const onRetry    = opts && opts.onRetry;
+
+		let attempt = 0;
+		for (;;) {
+			try {
+				return await post(action, data);
+			} catch (err) {
+				attempt++;
+				if (attempt > maxRetries) throw err;
+				const backoff = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s…
+				if (onRetry) onRetry(attempt, maxRetries, err);
+				await sleep(backoff);
+			}
+		}
 	}
 
 	/* ── File-type classifier ────────────────────────────────────────── */
@@ -426,13 +464,29 @@
 			let offset   = 0;
 			let total    = 0;
 			let complete = false;
+			let stalled  = false;
 
 			while (!complete) {
-				const data = await post('mus_scan_batch', {
-					offset: String(offset),
-					limit:  String(cfg.batch_size || 50),
-					...filters,
-				});
+				let data;
+				try {
+					data = await postWithRetry('mus_scan_batch', {
+						offset: String(offset),
+						limit:  String(cfg.batch_size || 50),
+						total:  String(total),
+						...filters,
+					}, {
+						onRetry: (attempt, max) => {
+							setProgress(
+								total > 0 ? Math.round((allItems.length / total) * 100) : 0,
+								(S.retrying || 'Server hiccup — retrying (%1$d/%2$d)…').replace('%1$d', attempt).replace('%2$d', max)
+							);
+						},
+					});
+				} catch (batchErr) {
+					console.error(batchErr);
+					stalled = true;
+					break;
+				}
 
 				total    = parseInt(data.total, 10) || 0;
 				offset   = parseInt(data.next_offset, 10) || 0;
@@ -446,23 +500,32 @@
 				setProgress(pct, (S.scanning || 'Scanning…') + ' ' + allItems.length + ' / ' + total);
 				updateSummary();
 				render();
+
+				if (!complete) await sleep(cfg.batch_delay_ms || 0);
 			}
 
-		setProgress(100, (S.scan_complete || 'Scan complete.') + ' ' + allItems.length + ' / ' + total);
-		updateSummary();
-		render();
-		markScannedNow();
+			if (stalled) {
+				setProgress(100, S.scan_paused || 'Scan paused after a server error.');
+				updateSummary();
+				render();
+				return;
+			}
 
-		try { await findDuplicates(); } catch (e) { /* duplicate scan is optional */ }
-	} catch (err) {
-		console.error(err);
-		alert((S.scan_failed || 'Scan failed.') + ' ' + (err.message || ''));
-	} finally {
-		busy(false);
-		updateSummary();
-		render();
-		setTimeout(hideProgress, 4000);
-	}
+			setProgress(100, (S.scan_complete || 'Scan complete.') + ' ' + allItems.length + ' / ' + total);
+			updateSummary();
+			render();
+			markScannedNow();
+
+			try { await findDuplicates(); } catch (e) { /* duplicate scan is optional */ }
+		} catch (err) {
+			console.error(err);
+			alert((S.scan_failed || 'Scan failed.') + ' ' + (err.message || ''));
+		} finally {
+			busy(false);
+			updateSummary();
+			render();
+			setTimeout(hideProgress, 4000);
+		}
 	}
 
 	/* ── Load previously cached scan results (no rebuild) ──────────────── */
@@ -492,10 +555,18 @@
 			let complete = false;
 
 			while (!complete) {
-				const data = await post('mus_scan_batch', {
+				const data = await postWithRetry('mus_scan_batch', {
 					offset: String(offset),
 					limit:  String(cfg.batch_size || 50),
+					total:  String(total),
 					...filters,
+				}, {
+					onRetry: (attempt, max) => {
+						setProgress(
+							total > 0 ? Math.round((allItems.length / total) * 100) : 0,
+							(S.retrying || 'Server hiccup — retrying (%1$d/%2$d)…').replace('%1$d', attempt).replace('%2$d', max)
+						);
+					},
 				});
 
 				total    = parseInt(data.total, 10) || 0;
@@ -508,6 +579,8 @@
 
 				updateSummary();
 				render();
+
+				if (!complete) await sleep(cfg.batch_delay_ms || 0);
 			}
 		} catch (err) {
 			console.error(err);
@@ -530,10 +603,14 @@
 		let complete = false;
 
 		while (!complete) {
-			const data = await post('mus_find_duplicates', {
+			const data = await postWithRetry('mus_find_duplicates', {
 				offset: String(offset),
 				limit:  '100',
 				reset:  offset === 0 ? '1' : '0',
+			}, {
+				onRetry: (attempt, max) => {
+					setProgress(0, (S.retrying || 'Server hiccup — retrying (%1$d/%2$d)…').replace('%1$d', attempt).replace('%2$d', max));
+				},
 			});
 
 			const total = parseInt(data.total, 10) || 1;
@@ -551,6 +628,8 @@
 				dupTotalWasted = data.total_wasted || '0 B';
 				dupCount       = data.duplicate_count || 0;
 			}
+
+			if (!complete) await sleep(cfg.batch_delay_ms || 0);
 		}
 
 		$('mus-count-dupes').textContent = dupCount || '';
@@ -688,50 +767,162 @@
 
 	/* ── Restore flow ─────────────────────────────────────────────────── */
 
+	let activeRestorePicker = null;
+
 	async function runRestore(btn) {
 		const filename = btn.dataset.file;
 		if (!filename) return;
+
+		// Toggle closed if this row's picker is already open.
+		if (activeRestorePicker && activeRestorePicker.dataset.file === filename) {
+			activeRestorePicker.remove();
+			activeRestorePicker = null;
+			return;
+		}
 
 		const original = btn.textContent;
 		btn.disabled = true;
 		btn.textContent = 'Checking…';
 
 		let preview = null;
+		let previewError = null;
 		try {
 			preview = await post('mus_preview_restore', { filename });
 		} catch (err) {
-			/* If the check fails, fall through to the normal confirm below rather than blocking the restore. */
+			previewError = err;
 		}
 
 		btn.disabled = false;
 		btn.textContent = original;
 
-		let message = 'Restore files from "' + filename + '" into the Media Library?\n\n' +
-			'Where possible, each file is restored with its original ID, so places that referenced it ' +
-			'by ID (ACF fields, featured images, Elementor widgets, etc.) should pick it up automatically. ' +
-			'If its original ID is no longer free, it will be added as a new item instead.';
-
-		if (preview && preview.previously_restored_count > 0) {
-			const repeats = (preview.files || []).filter((f) => f.restored_before);
-			message = '⚠ ' + repeats.length + ' file(s) in this backup have already been restored before:\n\n' +
-				repeats.map((f) => {
-					const lastDate = f.previous_restores[f.previous_restores.length - 1];
-					return '• ' + f.filename + ' — restored ' + f.restore_count + 'x before (last: ' + lastDate + ')';
-				}).join('\n') +
-				'\n\nRestoring again will add another copy of each as a new Media Library item (or reclaim its original ID, if still free). Continue?';
+		if (activeRestorePicker) {
+			activeRestorePicker.remove();
+			activeRestorePicker = null;
 		}
 
-		if (!confirm(message)) {
+		if (!preview || !preview.files || !preview.files.length) {
+			// Couldn't list the contents (e.g. ZipArchive missing) — fall back
+			// to an all-or-nothing restore behind a plain confirm dialog.
+			const message = previewError
+				? 'Could not inspect this backup\'s contents (' + (previewError.message || 'unknown error') + ').\n\nRestore every file in "' + filename + '" anyway?'
+				: 'Restore every file from "' + filename + '" into the Media Library?';
+			if (confirm(message)) {
+				await performRestore(filename, [], btn);
+			}
 			return;
 		}
 
+		const panel = document.createElement('div');
+		panel.className = 'mus-restore-picker';
+		panel.dataset.file = filename;
+		panel.innerHTML = buildRestorePickerHtml(filename, preview);
+		btn.closest('.mus-backup-row').insertAdjacentElement('afterend', panel);
+		activeRestorePicker = panel;
+
+		wireRestorePicker(panel, filename, btn);
+	}
+
+	function buildRestorePickerHtml(filename, preview) {
+		const files = preview.files || [];
+
+		let rows = files.map((f, i) => {
+			const badge = f.restored_before
+				? ' <span class="mus-badge-sm mus-badge-warn">Restored before (' + f.restore_count + 'x)</span>'
+				: '';
+			return '<label class="mus-restore-file-row">' +
+				'<input type="checkbox" class="mus-restore-file-cb" data-name="' + esc(f.filename) + '" checked>' +
+				'<span class="mus-restore-file-info">' +
+				'<span class="mus-restore-file-name">' + esc(f.filename) + badge + '</span>' +
+				'</span>' +
+				'<span class="mus-restore-file-size">' + esc(f.size_fmt || '') + '</span>' +
+				'</label>';
+		}).join('');
+
+		return '<div class="mus-restore-picker-head">' +
+			'<strong>Choose files to restore from &ldquo;' + esc(filename) + '&rdquo;</strong>' +
+			'<span class="mus-restore-picker-actions">' +
+			'<button type="button" class="mus-restore-select-all">Select all</button>' +
+			'<span>&middot;</span>' +
+			'<button type="button" class="mus-restore-select-none">Select none</button>' +
+			'</span>' +
+			'</div>' +
+			'<div class="mus-restore-file-list">' + rows + '</div>' +
+			'<div class="mus-restore-picker-footer">' +
+			'<span class="mus-restore-picker-count"></span>' +
+			'<span>' +
+			'<button type="button" class="button mus-restore-cancel">Cancel</button> ' +
+			'<button type="button" class="button button-primary mus-restore-confirm">Restore selected</button>' +
+			'</span>' +
+			'</div>';
+	}
+
+	function wireRestorePicker(panel, filename, btn) {
+		const checkboxes = Array.from(panel.querySelectorAll('.mus-restore-file-cb'));
+		const countEl    = panel.querySelector('.mus-restore-picker-count');
+		const confirmBtn = panel.querySelector('.mus-restore-confirm');
+
+		function updateCount() {
+			const checked = checkboxes.filter((cb) => cb.checked).length;
+			countEl.textContent = checked + ' of ' + checkboxes.length + ' file(s) selected';
+			confirmBtn.disabled = checked === 0;
+		}
+
+		checkboxes.forEach((cb) => cb.addEventListener('change', updateCount));
+		updateCount();
+
+		panel.querySelector('.mus-restore-select-all').addEventListener('click', () => {
+			checkboxes.forEach((cb) => { cb.checked = true; });
+			updateCount();
+		});
+
+		panel.querySelector('.mus-restore-select-none').addEventListener('click', () => {
+			checkboxes.forEach((cb) => { cb.checked = false; });
+			updateCount();
+		});
+
+		panel.querySelector('.mus-restore-cancel').addEventListener('click', () => {
+			panel.remove();
+			if (activeRestorePicker === panel) activeRestorePicker = null;
+		});
+
+		confirmBtn.addEventListener('click', async () => {
+			const selected     = checkboxes.filter((cb) => cb.checked).map((cb) => cb.dataset.name);
+			const selectedAll  = selected.length === checkboxes.length;
+			const repeatsNames = checkboxes
+				.filter((cb) => cb.checked)
+				.map((cb) => cb.closest('.mus-restore-file-row').querySelector('.mus-badge-warn'))
+				.filter(Boolean);
+
+			if (repeatsNames.length) {
+				const proceed = confirm(
+					'⚠ ' + repeatsNames.length + ' of the selected file(s) have already been restored before.\n\n' +
+					'Restoring again will add another copy as a new Media Library item (or reclaim its original ID, if still free). Continue?'
+				);
+				if (!proceed) return;
+			}
+
+			panel.remove();
+			if (activeRestorePicker === panel) activeRestorePicker = null;
+
+			// Pass an empty selection (meaning "everything") when every row is
+			// checked, so the backend takes its normal full-restore path.
+			await performRestore(filename, selectedAll ? [] : selected, btn);
+		});
+	}
+
+	async function performRestore(filename, selectedFiles, btn) {
 		const resultEl = $('mus-restore-result');
+		const original = btn.textContent;
 		btn.disabled = true;
 		btn.textContent = 'Restoring…';
 		if (resultEl) resultEl.style.display = 'none';
 
 		try {
-			const data = await post('mus_restore_backup', { filename });
+			const payload = { filename };
+			if (selectedFiles && selectedFiles.length) {
+				payload.files = selectedFiles;
+			}
+			const data = await post('mus_restore_backup', payload);
 			renderRestoreResult(data);
 		} catch (err) {
 			renderRestoreResult({ restored: [], errors: [err.message || (S.error || 'Error')] });
@@ -797,6 +988,10 @@
 			html = '<p>No files were found inside that backup.</p>';
 		}
 
+		if (data.skipped_count) {
+			html += '<p class="description">' + data.skipped_count + ' file(s) in the backup were left as-is (not selected).</p>';
+		}
+
 		el.innerHTML = html;
 		el.style.display = 'block';
 	}
@@ -809,11 +1004,13 @@
 		const emailEl     = $('mus-set-email');
 		const retentionEl = $('mus-set-retention');
 		const themeEl     = $('mus-set-theme');
+		const delayEl     = $('mus-set-batch-delay');
 
 		if (cronEl) cronEl.checked           = !!s.enable_cron;
 		if (emailEl) emailEl.value           = s.cron_email || '';
 		if (retentionEl) retentionEl.value    = s.retention_days || 30;
 		if (themeEl) themeEl.checked          = !!s.scan_theme;
+		if (delayEl) delayEl.value             = (typeof s.batch_delay_ms !== 'undefined') ? s.batch_delay_ms : 250;
 
 		$('mus-save-settings').addEventListener('click', async () => {
 			try {
@@ -822,7 +1019,10 @@
 					cron_email:       emailEl ? emailEl.value : '',
 					retention_days:   retentionEl ? retentionEl.value : '30',
 					scan_theme_files: themeEl && themeEl.checked ? '1' : '0',
+					batch_delay_ms:   delayEl ? delayEl.value : '250',
 				});
+
+				if (delayEl) cfg.batch_delay_ms = parseInt(delayEl.value, 10) || 0;
 
 				$('mus-settings-msg').textContent = data.message || S.settings_saved || 'Saved.';
 				setTimeout(() => { $('mus-settings-msg').textContent = ''; }, 4000);
@@ -1054,10 +1254,14 @@
 
 			let complete = false;
 			while (!complete) {
-				const data = await post('mus_regenerate_batch', {
+				const data = await postWithRetry('mus_regenerate_batch', {
 					offset: String(offset),
 					limit: '5',
 					delete_disabled: deleteDisabled,
+				}, {
+					onRetry: (attempt, max) => {
+						setRegenProgress(0, (S.retrying || 'Server hiccup — retrying (%1$d/%2$d)…').replace('%1$d', attempt).replace('%2$d', max));
+					},
 				});
 
 				offset   = data.processed;
@@ -1066,6 +1270,8 @@
 
 				const pct = data.total > 0 ? Math.round((data.processed / data.total) * 100) : 0;
 				setRegenProgress(pct, 'Regenerating… ' + data.processed + ' / ' + data.total);
+
+				if (!complete) await sleep(cfg.batch_delay_ms || 0);
 			}
 
 			setRegenProgress(100, 'Regeneration complete!');
@@ -1097,9 +1303,13 @@
 
 			let complete = false;
 			while (!complete) {
-				const data = await post('mus_cleanup_sizes', {
+				const data = await postWithRetry('mus_cleanup_sizes', {
 					offset: String(offset),
 					limit: '20',
+				}, {
+					onRetry: (attempt, max) => {
+						setRegenProgress(0, (S.retrying || 'Server hiccup — retrying (%1$d/%2$d)…').replace('%1$d', attempt).replace('%2$d', max));
+					},
 				});
 
 				offset       = data.processed;
@@ -1108,6 +1318,8 @@
 
 				const pct = data.total > 0 ? Math.round((data.processed / data.total) * 100) : 0;
 				setRegenProgress(pct, 'Cleaning… ' + data.processed + ' / ' + data.total);
+
+				if (!complete) await sleep(cfg.batch_delay_ms || 0);
 			}
 
 			setRegenProgress(100, 'Cleanup complete!');

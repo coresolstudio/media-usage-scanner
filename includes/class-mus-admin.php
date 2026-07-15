@@ -58,6 +58,7 @@ class MUS_Admin {
 				'ajax_url'        => admin_url( 'admin-ajax.php' ),
 				'nonce'           => wp_create_nonce( MUS_Ajax::NONCE_ACTION ),
 				'batch_size'      => 50,
+				'batch_delay_ms'  => (int) get_option( 'mus_batch_delay_ms', 250 ),
 				'has_cached_scan' => (bool) $cached_index,
 				'strings'         => array(
 					'confirm_delete'   => __( 'Create a ZIP backup and permanently delete selected items? This cannot be undone.', 'media-usage-scanner' ),
@@ -77,12 +78,16 @@ class MUS_Admin {
 					'scan_btn_refresh' => __( 'Refresh Scan', 'media-usage-scanner' ),
 					'last_scanned'     => __( 'Last scanned: %s', 'media-usage-scanner' ),
 					'last_scanned_now' => __( 'Last scanned: just now', 'media-usage-scanner' ),
+					'retrying'         => __( 'Server hiccup — retrying (%1$d/%2$d)…', 'media-usage-scanner' ),
+					'scan_paused'      => __( 'Scan paused after a server error. This usually means a temporary hosting limit was hit. What was found so far is shown below — wait a moment and click "Refresh Scan" to continue, or increase the delay between requests in Settings.', 'media-usage-scanner' ),
+					'bad_response'     => __( 'The server returned an unexpected response (HTTP %d) instead of data. This usually means a temporary hosting limit (CPU/resource cap) was hit.', 'media-usage-scanner' ),
 				),
 				'settings'        => array(
 					'enable_cron'    => get_option( 'mus_enable_cron', false ) ? '1' : '',
 					'cron_email'     => get_option( 'mus_cron_email', get_option( 'admin_email' ) ),
 					'retention_days' => get_option( 'mus_backup_retention_days', 30 ),
 					'scan_theme'     => get_option( 'mus_scan_theme_files', false ) ? '1' : '',
+					'batch_delay_ms' => get_option( 'mus_batch_delay_ms', 250 ),
 				),
 			)
 		);
@@ -330,6 +335,13 @@ class MUS_Admin {
 							<div class="mus-setting-field">
 								<label><input type="checkbox" id="mus-set-theme"> <?php esc_html_e( 'Also check PHP/CSS/HTML files in the active theme for hardcoded media references', 'media-usage-scanner' ); ?></label>
 								<p class="description"><?php esc_html_e( 'Catches images referenced directly in template code. Off by default because it can slow down large themes.', 'media-usage-scanner' ); ?></p>
+							</div>
+						</div>
+						<div class="mus-setting-row">
+							<label class="mus-setting-label" for="mus-set-batch-delay"><?php esc_html_e( 'Delay between requests', 'media-usage-scanner' ); ?></label>
+							<div class="mus-setting-field">
+								<input type="number" id="mus-set-batch-delay" class="small-text" min="0" max="5000" step="50"> <?php esc_html_e( 'ms', 'media-usage-scanner' ); ?>
+								<p class="description"><?php esc_html_e( 'A short pause between each batch of files while scanning or regenerating. Increase this (e.g. 500–1000ms) if large scans fail with a 503 "server unavailable" error — common on shared hosting with strict resource limits.', 'media-usage-scanner' ); ?></p>
 							</div>
 						</div>
 					</div>

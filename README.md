@@ -21,7 +21,7 @@ Media Usage Scanner builds a reverse index of every place a file could be refere
 | 🎯 | **ACF ID-Field Aware** | Catches ACF Image/Gallery fields using the "ID" return format — bare integers and serialized ID arrays that URL-based scanners miss entirely |
 | 🗑️ | **Duplicate Finder** | Hashes files to surface exact duplicates and how much disk space they're wasting |
 | 💾 | **Automatic ZIP Backups** | Every deletion is backed up to a ZIP archive first — nothing is ever permanently lost by accident |
-| ↩️ | **One-Click Restore** | Re-imports a backup's files into the Media Library, restoring each file's **original attachment ID** whenever that ID is still free — so ACF fields, `_thumbnail_id`, Elementor widgets, and `custom_logo` references start working again automatically |
+| ↩️ | **Selective Restore** | Pick exactly which files to bring back from a backup ZIP — restoring each with its **original attachment ID** whenever that ID is still free — so ACF fields, `_thumbnail_id`, Elementor widgets, and `custom_logo` references start working again automatically |
 | 🕓 | **Restore History Tracking** | Every restore is logged with date, time, and user; restoring the same file again warns you upfront if it's been restored before |
 | ⚡ | **Cached Scan Results** | Scan results persist between visits — no need to re-scan every time you open the page. A "Refresh Scan" button gets you up-to-date data on demand |
 | 📅 | **Scheduled Weekly Scans** | Optional background scan with an emailed summary report — no need to open the admin page at all |
@@ -81,6 +81,7 @@ Re-generates intermediate image files based on currently-enabled sizes, or run a
 ## ↩️ Backup & Restore, in Detail
 
 - **Before any deletion**, the affected files are zipped into a timestamped backup archive under `wp-content/uploads/media-usage-scanner/backups/`, and every deleted file is logged (attachment ID, filename, URL, size, backup reference).
+- **Clicking "Restore"** opens a checklist of every file inside that backup (with size and prior-restore status), so you can restore all of them or only the specific ones you need — anything left unchecked stays in the archive, untouched, for later.
 - **On restore**, the plugin checks whether the file's original attachment ID is still free. WordPress never re-issues a deleted post ID through normal `AUTO_INCREMENT` inserts, so that ID slot is almost always still open — the plugin uses WordPress's `import_id` mechanism to recreate the attachment at that exact ID. Anything that referenced the file *by ID* (ACF fields, `_thumbnail_id`, Elementor widgets, `custom_logo`, menu items) starts working again immediately, with no manual re-linking.
 - If the original ID is no longer available, the file is restored as a new Media Library item instead — clearly flagged in the results.
 - Every restore is recorded with a timestamp and the user who performed it. Restoring the same file again shows its full restore history, both as an upfront warning before you confirm and as a per-file breakdown in the results afterward.
@@ -162,6 +163,13 @@ Both tables — along with all plugin options, scheduled events, and the `media-
 ---
 
 ## 📜 Changelog
+
+### 2.7.0
+- Selective restore — pick exactly which files inside a backup ZIP to bring back instead of restoring everything; unselected files are left untouched in the archive
+
+### 2.6.0
+- Fixed 503/timeout errors during large scans on resource-limited hosting: automatic retry with exponential backoff, a configurable delay between batch requests, clearer error messages for non-JSON server responses, and graceful handling of partial scan failures
+- Reduced redundant database queries during batch scanning
 
 ### 2.5.0
 - Upfront warning popup when restoring a backup whose files have already been restored before, with dates and counts, before confirming
