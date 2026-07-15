@@ -1,0 +1,831 @@
+/* ==========================================================================
+   Media Usage Scanner — Admin Styles
+   Clean, flat, WordPress-native admin UI. Color is used only to convey
+   status (used/unused, success/error) — never for decoration.
+   ========================================================================== */
+
+/* ── Main Container ──────────────────────────────────────────────────── */
+
+.mus-wrap {
+	max-width: 1240px;
+	margin: 20px 0 40px;
+}
+
+.mus-wrap h1 {
+	margin-bottom: 6px;
+}
+
+.mus-header-desc {
+	max-width: 720px;
+	margin: 0 0 20px;
+	font-size: 14px;
+	color: #50575e;
+	line-height: 1.6;
+}
+
+.mus-wrap > .wp-header-end {
+	display: none;
+}
+
+/* ── Main Tabs ───────────────────────────────────────────────────────── */
+
+.mus-main-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	margin: 0 0 20px;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+.mus-main-tab {
+	display: inline-block;
+	padding: 10px 16px;
+	margin-bottom: -1px;
+	font-size: 14px;
+	color: #50575e;
+	text-decoration: none;
+	background: transparent;
+	border: 1px solid transparent;
+	border-bottom: none;
+}
+
+.mus-main-tab:hover {
+	color: #1d2327;
+}
+
+.mus-main-tab.is-active {
+	color: #1d2327;
+	font-weight: 600;
+	background: #fff;
+	border-color: #c3c4c7;
+	border-bottom-color: #fff;
+}
+
+.mus-tab-panel {
+	display: none;
+}
+
+.mus-tab-panel.is-active {
+	display: block;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+
+.mus-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	margin-bottom: 20px;
+}
+
+.mus-card-header {
+	padding: 14px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.mus-card-header h2 {
+	margin: 0;
+	padding: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+	line-height: 1.4;
+}
+
+.mus-card-desc {
+	margin: 4px 0 0;
+	font-size: 13px;
+	color: #646970;
+	line-height: 1.6;
+	max-width: 780px;
+}
+
+.mus-card-body {
+	padding: 20px;
+}
+
+/* ── Form Fields ──────────────────────────────────────────────────────
+   One consistent height/padding/border for every text-like field on the
+   page (scan filters, client filters, settings, image size toggles), so
+   nothing looks larger or smaller than its neighbors. Only widths are
+   allowed to vary between fields (e.g. a date picker vs. a search box).
+   ────────────────────────────────────────────────────────────────────── */
+
+.mus-wrap input[type="text"],
+.mus-wrap input[type="search"],
+.mus-wrap input[type="email"],
+.mus-wrap input[type="number"],
+.mus-wrap input[type="date"],
+.mus-wrap select {
+	box-sizing: border-box;
+	height: 32px;
+	padding: 0 8px;
+	border-radius: 4px;
+	border: 1px solid #8c8f94;
+	font-size: 13px;
+	line-height: normal;
+	background: #fff;
+	vertical-align: middle;
+}
+
+/* ── Scan Filters ────────────────────────────────────────────────────── */
+
+.mus-filters {
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	margin-bottom: 18px;
+}
+
+.mus-filters label,
+.mus-client-filters label {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	font-size: 12px;
+	color: #50575e;
+	font-weight: 600;
+}
+
+.mus-filters input[type="date"] { min-width: 150px; }
+.mus-filters input[type="search"] { min-width: 240px; }
+.mus-filters select { min-width: 130px; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.mus-buttons {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.mus-last-scanned {
+	color: #646970;
+	font-size: 12px;
+}
+
+.mus-cached-note {
+	margin: 8px 0 0;
+}
+
+.mus-buttons .spinner.is-active { float: none; margin: 0 0 0 2px; }
+
+/* ── Progress Bar ────────────────────────────────────────────────────── */
+
+.mus-progress-wrap {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 18px;
+	padding-top: 18px;
+	border-top: 1px solid #dcdcde;
+}
+
+.mus-progress-bar {
+	flex: 1;
+	max-width: 420px;
+	height: 8px;
+	background: #f0f0f1;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.mus-progress-fill {
+	height: 100%;
+	width: 0;
+	background: #2271b1;
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+.mus-progress-text {
+	font-size: 13px;
+	color: #50575e;
+	white-space: nowrap;
+}
+
+/* ── Summary ──────────────────────────────────────────────────────────── */
+
+.mus-summary {
+	display: flex;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	margin-bottom: 20px;
+}
+
+.mus-summary-item {
+	flex: 1;
+	padding: 16px 20px;
+	text-align: center;
+	border-right: 1px solid #dcdcde;
+}
+
+.mus-summary-item:last-child { border-right: none; }
+
+.mus-summary-num {
+	display: block;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.mus-summary-item-flag .mus-summary-num { color: #a94442; }
+
+.mus-summary-label {
+	display: block;
+	font-size: 12px;
+	color: #646970;
+	margin-top: 4px;
+}
+
+/* ── Results ─────────────────────────────────────────────────────────── */
+
+.mus-results-desc {
+	font-size: 13px;
+	color: #646970;
+	line-height: 1.6;
+	margin: 0;
+	padding: 14px 20px 12px;
+}
+
+#mus-results {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	margin-bottom: 20px;
+}
+
+#mus-results .nav-tab-wrapper {
+	margin: 0;
+	padding: 0 20px;
+	background: #f6f7f7;
+	border-bottom: 1px solid #c3c4c7;
+	border-top: none;
+}
+
+#mus-results .nav-tab {
+	margin-bottom: -1px;
+	border: 1px solid transparent;
+	border-bottom: none;
+	padding: 10px 16px;
+	font-size: 13px;
+}
+
+#mus-results .nav-tab-active {
+	background: #fff;
+	border-color: #c3c4c7;
+	color: #1d2327;
+	font-weight: 600;
+}
+
+.mus-tab-count {
+	display: inline-block;
+	color: #646970;
+	font-size: 12px;
+	margin-left: 2px;
+}
+
+.nav-tab-active .mus-tab-count {
+	color: #2271b1;
+	font-weight: 600;
+}
+
+/* ── Client-side Filters ─────────────────────────────────────────────── */
+
+.mus-client-filters {
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	padding: 14px 20px;
+	background: #f6f7f7;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.mus-client-filters input[type="number"] { width: 90px; }
+.mus-client-filters select { min-width: 140px; }
+
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+
+#mus-results .tablenav {
+	display: flex;
+	align-items: center;
+	padding: 12px 20px;
+	margin: 0;
+	gap: 10px;
+	background: #fff;
+}
+
+#mus-results .tablenav::before,
+#mus-results .tablenav::after {
+	display: none;
+}
+
+#mus-results .tablenav.top {
+	border-bottom: 1px solid #f0f0f1;
+}
+
+#mus-results .tablenav.bottom {
+	border-top: 1px solid #f0f0f1;
+	justify-content: flex-end;
+}
+
+#mus-results .tablenav .alignleft.actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	float: none;
+	margin: 0;
+	padding: 0;
+}
+
+#mus-results .tablenav .mus-pagination {
+	margin-left: auto;
+	padding: 0;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+
+#mus-table-wrap { padding: 0 20px; }
+#mus-results .wp-list-table { border: none; border-collapse: collapse; }
+
+#mus-results .wp-list-table thead th,
+#mus-results .wp-list-table thead td {
+	border-bottom: 1px solid #c3c4c7;
+	padding: 10px 8px;
+	font-size: 12px;
+	color: #646970;
+}
+
+#mus-results .wp-list-table tbody td {
+	padding: 16px 8px;
+	vertical-align: middle;
+}
+
+#mus-results .wp-list-table tbody tr {
+	border-bottom: 1px solid #f0f0f1;
+}
+
+#mus-results .wp-list-table tbody tr:last-child {
+	border-bottom: none;
+}
+
+#mus-results .wp-list-table tfoot { display: none; }
+
+.wp-list-table.media .check-column { width: 34px; padding-left: 4px !important; }
+.wp-list-table.media .column-thumbnail { width: 76px; }
+.wp-list-table.media .column-title { width: 300px; }
+.wp-list-table.media .column-status { width: 90px; white-space: nowrap; text-align: center; }
+.wp-list-table.media .column-used-in { width: auto; }
+
+.wp-list-table.media td.column-status,
+.wp-list-table.media td.column-used-in {
+	vertical-align: top;
+	padding-top: 18px;
+}
+
+.mus-thumb {
+	width: 56px;
+	height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	overflow: hidden;
+	border-radius: 3px;
+}
+
+.mus-thumb img {
+	max-width: 100%;
+	max-height: 100%;
+	height: auto;
+	width: auto;
+	display: block;
+}
+
+.mus-filename {
+	color: #50575e;
+	font-size: 12px;
+	font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	word-break: break-word;
+}
+
+.mus-meta {
+	color: #8c8f94;
+	font-size: 11px;
+}
+
+/* Status badge: plain text + colored dot, no filled pill */
+.mus-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #1d2327;
+}
+
+.mus-badge::before {
+	content: '';
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.mus-badge.used::before { background: #00a32a; }
+.mus-badge.unused::before { background: #a94442; }
+
+.mus-used-list {
+	margin: 0;
+	padding-left: 16px;
+	font-size: 12px;
+	line-height: 1.6;
+	color: #50575e;
+}
+
+.mus-used-list li { margin-bottom: 3px; word-break: break-word; }
+
+/* ── Pagination ──────────────────────────────────────────────────────── */
+
+.mus-pagination {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.mus-pagination .mus-page-btn {
+	min-width: 30px;
+	height: 30px;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+	color: #2271b1;
+	cursor: pointer;
+	border-radius: 3px;
+	font-size: 13px;
+	line-height: 28px;
+	text-align: center;
+	padding: 0 8px;
+}
+
+.mus-pagination .mus-page-btn:hover {
+	background: #f0f0f1;
+	border-color: #8c8f94;
+}
+
+.mus-pagination .mus-page-btn.active {
+	background: #2271b1;
+	color: #fff;
+	border-color: #2271b1;
+	font-weight: 600;
+}
+
+.mus-pagination .mus-page-btn:disabled {
+	opacity: 0.4;
+	cursor: default;
+	pointer-events: none;
+}
+
+.mus-pagination .mus-page-info {
+	font-size: 13px;
+	color: #50575e;
+	margin: 0 6px;
+}
+
+/* ── Duplicates ──────────────────────────────────────────────────────── */
+
+#mus-dupes-wrap { padding: 0 20px 20px; }
+
+.mus-dup-summary {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	padding: 12px 16px;
+	margin: 16px 20px 0;
+	font-size: 13px;
+	color: #3c434a;
+}
+
+.mus-dup-group {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	padding: 16px;
+	margin-top: 16px;
+}
+
+.mus-dup-group h4 {
+	margin: 0 0 12px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.mus-dup-items {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.mus-dup-item {
+	border: 1px solid #dcdcde;
+	padding: 10px;
+	text-align: center;
+	min-width: 120px;
+	max-width: 160px;
+}
+
+.mus-dup-item img {
+	max-width: 72px;
+	max-height: 72px;
+	display: block;
+	margin: 0 auto 8px;
+}
+
+.mus-dup-item .mus-filename { font-size: 11px; }
+.mus-dup-item .mus-meta { font-size: 10px; }
+
+/* ── Settings ─────────────────────────────────────────────────────────── */
+
+.mus-settings-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.mus-setting-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 20px;
+	padding: 16px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.mus-setting-row:last-child { border-bottom: none; }
+
+.mus-setting-row-bordered {
+	border-bottom: 1px solid #dcdcde;
+	padding-bottom: 20px;
+	margin-bottom: 4px;
+}
+
+.mus-setting-label {
+	flex: 0 0 200px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+	padding-top: 2px;
+}
+
+.mus-setting-field {
+	flex: 1;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.mus-setting-field .description {
+	margin: 6px 0 0;
+	color: #646970;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.mus-setting-actions {
+	margin-top: 18px;
+	padding-top: 18px;
+	border-top: 1px solid #f0f0f1;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.mus-inline-msg {
+	font-size: 13px;
+	color: #00a32a;
+}
+
+/* ── Backups ─────────────────────────────────────────────────────────── */
+
+.mus-backup-row {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 10px 0;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 13px;
+}
+
+.mus-backup-row:last-child { border-bottom: none; }
+
+.mus-backup-name {
+	flex: 1;
+	font-family: 'SF Mono', Monaco, Consolas, monospace;
+	font-size: 12px;
+	word-break: break-all;
+	color: #2c3338;
+}
+
+.mus-backup-meta {
+	color: #646970;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.mus-restore-result {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid #dcdcde;
+	font-size: 13px;
+}
+
+.mus-restore-result .description {
+	margin: 6px 0 0;
+}
+
+/* ── Image Size Manager ──────────────────────────────────────────────── */
+
+.mus-sizes-table { border: none !important; }
+
+.mus-sizes-table thead th {
+	font-size: 12px;
+	color: #646970;
+	padding: 10px 12px;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+.mus-sizes-table tbody td {
+	padding: 10px 12px;
+	vertical-align: middle;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.mus-sizes-table code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 12px;
+	color: #1d2327;
+}
+
+.mus-st-name { width: 200px; }
+.mus-st-dim  { width: 120px; }
+.mus-st-crop { width: 80px; }
+.mus-st-source { width: 160px; }
+.mus-st-toggle { width: 80px; text-align: center; }
+
+/* Source/crop tags: plain outlined text, no filled color pills */
+.mus-source-badge,
+.mus-badge-sm {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	color: #50575e;
+	border: 1px solid #dcdcde;
+}
+
+.mus-badge-crop {
+	color: #1d2327;
+	border-color: #c3c4c7;
+}
+
+.mus-badge-warn {
+	color: #8a6100;
+	border-color: #e0c266;
+	background: #fcf5e2;
+}
+
+.mus-restore-history {
+	list-style: none;
+	margin: 4px 0 2px 16px;
+	padding: 0;
+	font-size: 12px;
+}
+
+.mus-restore-history li {
+	margin-bottom: 2px;
+	color: #646970;
+}
+
+/* Toggle switch */
+.mus-switch {
+	position: relative;
+	display: inline-block;
+	width: 40px;
+	height: 22px;
+}
+
+.mus-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.mus-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0; left: 0; right: 0; bottom: 0;
+	background: #c3c4c7;
+	border-radius: 22px;
+	transition: 0.2s ease;
+}
+
+.mus-slider::before {
+	content: '';
+	position: absolute;
+	height: 16px;
+	width: 16px;
+	left: 3px;
+	bottom: 3px;
+	background: #fff;
+	border-radius: 50%;
+	transition: 0.2s ease;
+}
+
+.mus-switch input:checked + .mus-slider {
+	background: #2271b1;
+}
+
+.mus-switch input:checked + .mus-slider::before {
+	transform: translateX(18px);
+}
+
+.mus-switch input:focus + .mus-slider {
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Regeneration section */
+.mus-regen-options {
+	margin-bottom: 14px;
+}
+
+.mus-regen-options label {
+	font-size: 13px;
+	color: #2c3338;
+}
+
+/* Result notices follow WP core's flat notice pattern: white bg, colored left border only */
+.mus-regen-success,
+.mus-regen-error {
+	margin-top: 16px;
+	padding: 10px 14px;
+	font-size: 13px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+}
+
+.mus-regen-success {
+	border-left: 4px solid #00a32a;
+}
+
+.mus-regen-error {
+	border-left: 4px solid #a94442;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+
+.mus-footer {
+	margin-top: 4px;
+	color: #8c8f94;
+	font-size: 12px;
+	text-align: center;
+}
+
+.mus-footer-sep {
+	margin: 0 4px;
+}
+
+/* ── Focus states (accessibility, not decoration) ────────────────────── */
+
+.mus-wrap input[type="text"]:focus,
+.mus-wrap input[type="search"]:focus,
+.mus-wrap input[type="email"]:focus,
+.mus-wrap input[type="number"]:focus,
+.mus-wrap input[type="date"]:focus,
+.mus-wrap select:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+@media screen and (max-width: 1024px) {
+	.wp-list-table.media .column-title { width: auto; }
+	.mus-setting-label { flex: 0 0 170px; }
+}
+
+@media screen and (max-width: 782px) {
+	.mus-card-body { padding: 16px; }
+	.mus-filters,
+	.mus-client-filters { flex-direction: column; align-items: stretch; }
+	.mus-summary { flex-direction: column; }
+	.mus-summary-item { border-right: none; border-bottom: 1px solid #dcdcde; }
+	.mus-summary-item:last-child { border-bottom: none; }
+	.mus-setting-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+	.mus-setting-label { flex: none; }
+	.mus-pagination { gap: 4px; }
+	#mus-results .tablenav { padding: 12px 16px; flex-wrap: wrap; }
+	#mus-table-wrap { padding: 0 16px; }
+}
