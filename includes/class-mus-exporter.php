@@ -224,7 +224,10 @@ class MUS_Exporter {
 				continue;
 			}
 
-			$history = MUS_Logger::get_restore_history( $entry );
+			// Only past restores whose resulting attachment is still in the
+			// Media Library count as "already restored" — if that copy was
+			// deleted again since, there's nothing left to warn about.
+			$history = MUS_Logger::get_active_restore_history( $entry );
 			$dates   = array();
 			foreach ( $history as $row ) {
 				$dates[] = date_i18n( $date_format, strtotime( $row->restored_at ) );
@@ -238,6 +241,7 @@ class MUS_Exporter {
 				'size'              => $size,
 				'size_fmt'          => $size ? size_format( $size ) : '',
 				'restored_before'   => ! empty( $dates ),
+				'still_in_library'  => ! empty( $dates ),
 				'restore_count'     => count( $dates ),
 				'previous_restores' => $dates,
 			);
@@ -346,10 +350,12 @@ class MUS_Exporter {
 			$log_entry = isset( $log_map[ $entry ] ) ? $log_map[ $entry ] : null;
 			$target    = self::resolve_restore_target( $log_entry );
 
-			// Has this exact filename been restored before? Fetch this
-			// *before* logging the current attempt, so it only reflects
-			// prior restores, not this one.
-			$prior_restores = MUS_Logger::get_restore_history( $entry );
+			// Has this exact filename been restored before, with that copy
+			// still sitting in the Media Library today? Fetch this *before*
+			// logging the current attempt, so it only reflects prior
+			// restores, not this one. Restores whose copy was deleted again
+			// don't count — nothing left to warn about.
+			$prior_restores = MUS_Logger::get_active_restore_history( $entry );
 
 			$unique_name = wp_unique_filename( $target['dir'], $entry );
 			$dest_path   = trailingslashit( $target['dir'] ) . $unique_name;

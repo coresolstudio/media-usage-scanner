@@ -3,7 +3,7 @@
  * Plugin Name: Media Usage Scanner
  * Plugin URI:  https://coresolstudio.com
  * Description: Comprehensive media library scanner with reverse-index engine, duplicate detection, selective one-click backup restore, ZIP/CSV export, scheduled scans, WP-CLI, and intelligent usage detection across Elementor, WooCommerce, ACF (including ID-only return format fields), widgets, menus, theme mods, and more.
- * Version:     2.7.0
+ * Version:     2.7.1
  * Author:      Hassan Ali | Coresol Studio
  * Author URI:  https://coresolstudio.com
  * License:     GPL-2.0-or-later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MUS_VERSION', '2.7.0' );
+define( 'MUS_VERSION', '2.7.1' );
 define( 'MUS_PLUGIN_FILE', __FILE__ );
 define( 'MUS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MUS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

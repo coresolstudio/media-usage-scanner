@@ -827,7 +827,7 @@
 
 		let rows = files.map((f, i) => {
 			const badge = f.restored_before
-				? ' <span class="mus-badge-sm mus-badge-warn">Restored before (' + f.restore_count + 'x)</span>'
+				? ' <span class="mus-badge-sm mus-badge-warn">Already restored &middot; still in library (' + f.restore_count + 'x)</span>'
 				: '';
 			return '<label class="mus-restore-file-row">' +
 				'<input type="checkbox" class="mus-restore-file-cb" data-name="' + esc(f.filename) + '" checked>' +
@@ -895,7 +895,7 @@
 
 			if (repeatsNames.length) {
 				const proceed = confirm(
-					'⚠ ' + repeatsNames.length + ' of the selected file(s) have already been restored before.\n\n' +
+					'⚠ ' + repeatsNames.length + ' of the selected file(s) were already restored before and that copy is still in the Media Library.\n\n' +
 					'Restoring again will add another copy as a new Media Library item (or reclaim its original ID, if still free). Continue?'
 				);
 				if (!proceed) return;
@@ -936,7 +936,7 @@
 		const prior = r.previous_restores || [];
 		if (!prior.length) return '';
 
-		let out = ' <span class="mus-badge-sm mus-badge-warn">Restored before (' + prior.length + 'x)</span>';
+		let out = ' <span class="mus-badge-sm mus-badge-warn">Already restored before &middot; was still in library (' + prior.length + 'x)</span>';
 		out += '<ul class="mus-restore-history">';
 		prior.forEach((p, i) => {
 			out += '<li>' + (i + 1) + '. ' + esc(p.date) + (p.by ? ' — <span class="description">' + esc(p.by) + '</span>' : '') + '</li>';

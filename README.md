@@ -84,7 +84,7 @@ Re-generates intermediate image files based on currently-enabled sizes, or run a
 - **Clicking "Restore"** opens a checklist of every file inside that backup (with size and prior-restore status), so you can restore all of them or only the specific ones you need — anything left unchecked stays in the archive, untouched, for later.
 - **On restore**, the plugin checks whether the file's original attachment ID is still free. WordPress never re-issues a deleted post ID through normal `AUTO_INCREMENT` inserts, so that ID slot is almost always still open — the plugin uses WordPress's `import_id` mechanism to recreate the attachment at that exact ID. Anything that referenced the file *by ID* (ACF fields, `_thumbnail_id`, Elementor widgets, `custom_logo`, menu items) starts working again immediately, with no manual re-linking.
 - If the original ID is no longer available, the file is restored as a new Media Library item instead — clearly flagged in the results.
-- Every restore is recorded with a timestamp and the user who performed it. Restoring the same file again shows its full restore history, both as an upfront warning before you confirm and as a per-file breakdown in the results afterward.
+- Every restore is recorded with a timestamp and the user who performed it. Restoring the same file again shows its full restore history, both as an upfront warning before you confirm and as a per-file breakdown in the results afterward — but only if that earlier restored copy is still sitting in the Media Library. If it was deleted again since, there's nothing to warn about and the file is treated as if it were never restored.
 
 ---
 
@@ -163,6 +163,9 @@ Both tables — along with all plugin options, scheduled events, and the `media-
 ---
 
 ## 📜 Changelog
+
+### 2.7.1
+- "Already restored" warnings now only appear if that restored copy is still in the Media Library — if it was deleted again since, the file is treated as never restored
 
 ### 2.7.0
 - Selective restore — pick exactly which files inside a backup ZIP to bring back instead of restoring everything; unselected files are left untouched in the archive

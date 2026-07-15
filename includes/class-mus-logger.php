@@ -206,6 +206,48 @@ class MUS_Logger {
 	}
 
 	/**
+	 * Whether a given attachment ID still exists as a Media Library item.
+	 * Used to decide whether a past restore is still relevant — if the
+	 * restored copy was since deleted again, there's nothing left to warn
+	 * about and the file can be treated as if it were never restored.
+	 *
+	 * @param int $attachment_id Attachment post ID.
+	 * @return bool
+	 */
+	public static function attachment_exists( $attachment_id ) {
+		$attachment_id = absint( $attachment_id );
+		if ( ! $attachment_id ) {
+			return false;
+		}
+
+		$post = get_post( $attachment_id );
+
+		return ( $post && 'attachment' === $post->post_type );
+	}
+
+	/**
+	 * Same as get_restore_history(), but only includes past restores whose
+	 * resulting attachment is still present in the Media Library today.
+	 * A restore whose copy was deleted again shouldn't trigger "already
+	 * restored" warnings — restoring again is effectively a fresh restore.
+	 *
+	 * @param string $filename Original filename.
+	 * @return array Rows ordered oldest to newest.
+	 */
+	public static function get_active_restore_history( $filename ) {
+		$history = self::get_restore_history( $filename );
+
+		return array_values(
+			array_filter(
+				$history,
+				function ( $row ) {
+					return self::attachment_exists( $row->new_attachment_id );
+				}
+			)
+		);
+	}
+
+	/**
 	 * Total number of log entries.
 	 *
 	 * @return int
